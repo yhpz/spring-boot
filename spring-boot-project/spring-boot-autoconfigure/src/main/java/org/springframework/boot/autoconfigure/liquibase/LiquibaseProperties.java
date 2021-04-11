@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2017 the original author or authors.
+ * Copyright 2012-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -28,6 +28,9 @@ import org.springframework.util.Assert;
  * Configuration properties to configure {@link SpringLiquibase}.
  *
  * @author Marcel Overdijk
+ * @author Eddú Meléndez
+ * @author Ferenc Gratzer
+ * @author Evgeniy Cheban
  * @since 1.1.0
  */
 @ConfigurationProperties(prefix = "spring.liquibase", ignoreUnknownFields = false)
@@ -39,9 +42,10 @@ public class LiquibaseProperties {
 	private String changeLog = "classpath:/db/changelog/db.changelog-master.yaml";
 
 	/**
-	 * Whether to check that the change log location exists.
+	 * Whether to clear all checksums in the current changelog, so they will be
+	 * recalculated upon the next update.
 	 */
-	private boolean checkChangeLogLocation = true;
+	private boolean clearChecksums;
 
 	/**
 	 * Comma-separated list of runtime contexts to use.
@@ -52,6 +56,26 @@ public class LiquibaseProperties {
 	 * Default database schema.
 	 */
 	private String defaultSchema;
+
+	/**
+	 * Schema to use for Liquibase objects.
+	 */
+	private String liquibaseSchema;
+
+	/**
+	 * Tablespace to use for Liquibase objects.
+	 */
+	private String liquibaseTablespace;
+
+	/**
+	 * Name of table to use for tracking change history.
+	 */
+	private String databaseChangeLogTable = "DATABASECHANGELOG";
+
+	/**
+	 * Name of table to use for tracking concurrent Liquibase usage.
+	 */
+	private String databaseChangeLogLockTable = "DATABASECHANGELOGLOCK";
 
 	/**
 	 * Whether to first drop the database schema.
@@ -74,6 +98,11 @@ public class LiquibaseProperties {
 	private String password;
 
 	/**
+	 * Fully qualified name of the JDBC driver. Auto-detected based on the URL by default.
+	 */
+	private String driverClassName;
+
+	/**
 	 * JDBC URL of the database to migrate. If not set, the primary configured data source
 	 * is used.
 	 */
@@ -94,6 +123,18 @@ public class LiquibaseProperties {
 	 */
 	private File rollbackFile;
 
+	/**
+	 * Whether rollback should be tested before update is performed.
+	 */
+	private boolean testRollbackOnUpdate;
+
+	/**
+	 * Tag name to use when applying database changes. Can also be used with
+	 * "rollbackFile" to generate a rollback script for all existing changes associated
+	 * with that tag.
+	 */
+	private String tag;
+
 	public String getChangeLog() {
 		return this.changeLog;
 	}
@@ -101,14 +142,6 @@ public class LiquibaseProperties {
 	public void setChangeLog(String changeLog) {
 		Assert.notNull(changeLog, "ChangeLog must not be null");
 		this.changeLog = changeLog;
-	}
-
-	public boolean isCheckChangeLogLocation() {
-		return this.checkChangeLogLocation;
-	}
-
-	public void setCheckChangeLogLocation(boolean checkChangeLogLocation) {
-		this.checkChangeLogLocation = checkChangeLogLocation;
 	}
 
 	public String getContexts() {
@@ -127,12 +160,52 @@ public class LiquibaseProperties {
 		this.defaultSchema = defaultSchema;
 	}
 
+	public String getLiquibaseSchema() {
+		return this.liquibaseSchema;
+	}
+
+	public void setLiquibaseSchema(String liquibaseSchema) {
+		this.liquibaseSchema = liquibaseSchema;
+	}
+
+	public String getLiquibaseTablespace() {
+		return this.liquibaseTablespace;
+	}
+
+	public void setLiquibaseTablespace(String liquibaseTablespace) {
+		this.liquibaseTablespace = liquibaseTablespace;
+	}
+
+	public String getDatabaseChangeLogTable() {
+		return this.databaseChangeLogTable;
+	}
+
+	public void setDatabaseChangeLogTable(String databaseChangeLogTable) {
+		this.databaseChangeLogTable = databaseChangeLogTable;
+	}
+
+	public String getDatabaseChangeLogLockTable() {
+		return this.databaseChangeLogLockTable;
+	}
+
+	public void setDatabaseChangeLogLockTable(String databaseChangeLogLockTable) {
+		this.databaseChangeLogLockTable = databaseChangeLogLockTable;
+	}
+
 	public boolean isDropFirst() {
 		return this.dropFirst;
 	}
 
 	public void setDropFirst(boolean dropFirst) {
 		this.dropFirst = dropFirst;
+	}
+
+	public boolean isClearChecksums() {
+		return this.clearChecksums;
+	}
+
+	public void setClearChecksums(boolean clearChecksums) {
+		this.clearChecksums = clearChecksums;
 	}
 
 	public boolean isEnabled() {
@@ -157,6 +230,14 @@ public class LiquibaseProperties {
 
 	public void setPassword(String password) {
 		this.password = password;
+	}
+
+	public String getDriverClassName() {
+		return this.driverClassName;
+	}
+
+	public void setDriverClassName(String driverClassName) {
+		this.driverClassName = driverClassName;
 	}
 
 	public String getUrl() {
@@ -189,6 +270,22 @@ public class LiquibaseProperties {
 
 	public void setRollbackFile(File rollbackFile) {
 		this.rollbackFile = rollbackFile;
+	}
+
+	public boolean isTestRollbackOnUpdate() {
+		return this.testRollbackOnUpdate;
+	}
+
+	public void setTestRollbackOnUpdate(boolean testRollbackOnUpdate) {
+		this.testRollbackOnUpdate = testRollbackOnUpdate;
+	}
+
+	public String getTag() {
+		return this.tag;
+	}
+
+	public void setTag(String tag) {
+		this.tag = tag;
 	}
 
 }

@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2017 the original author or authors.
+ * Copyright 2012-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,10 +17,13 @@
 package org.springframework.boot.gradle.plugin;
 
 import org.gradle.testkit.runner.BuildResult;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledForJreRange;
+import org.junit.jupiter.api.condition.JRE;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import org.springframework.boot.gradle.testkit.GradleBuild;
+import org.springframework.boot.gradle.testkit.GradleBuildExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -29,26 +32,23 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * @author Andy Wilkinson
  */
-public class SpringBootPluginIntegrationTests {
+@ExtendWith(GradleBuildExtension.class)
+class SpringBootPluginIntegrationTests {
 
-	@Rule
-	public final GradleBuild gradleBuild = new GradleBuild();
+	final GradleBuild gradleBuild = new GradleBuild();
 
+	@DisabledForJreRange(min = JRE.JAVA_14)
 	@Test
-	public void failFastWithVersionOfGradleLowerThanRequired() {
-		BuildResult result = this.gradleBuild.gradleVersion("3.5.1").buildAndFail();
-		assertThat(result.getOutput()).contains("Spring Boot plugin requires Gradle 4.0"
-				+ " or later. The current version is Gradle 3.5.1");
+	void failFastWithVersionOfGradle6LowerThanRequired() {
+		BuildResult result = this.gradleBuild.gradleVersion("6.2.2").buildAndFail();
+		assertThat(result.getOutput())
+				.contains("Spring Boot plugin requires Gradle 6 (6.3 or later). The current version is Gradle 6.2.2");
 	}
 
+	@DisabledForJreRange(min = JRE.JAVA_16)
 	@Test
-	public void succeedWithVersionOfGradleHigherThanRequired() {
-		this.gradleBuild.gradleVersion("4.0.1").build();
-	}
-
-	@Test
-	public void succeedWithVersionOfGradleMatchingWhatIsRequired() {
-		this.gradleBuild.gradleVersion("4.0").build();
+	void succeedWithVersionOfGradle6MatchingWithIsRequired() {
+		this.gradleBuild.gradleVersion("6.3").build();
 	}
 
 }
